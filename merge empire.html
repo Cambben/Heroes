@@ -1,0 +1,299 @@
+<html><head><base href="https://www.resource-empire.com/"><title>Resource Empire: A Multiplayer Management Simulation</title>
+<style>
+body, html {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    font-family: 'Arial', sans-serif;
+    background: linear-gradient(45deg, #2c3e50, #3498db);
+    color: #ecf0f1;
+}
+.game-container {
+    display: flex;
+    height: 100vh;
+}
+.sidebar {
+    width: 250px;
+    background: rgba(0,0,0,0.5);
+    padding: 20px;
+    overflow-y: auto;
+}
+.main-area {
+    flex-grow: 1;
+    padding: 20px;
+    overflow-y: auto;
+}
+h1, h2 {
+    margin-top: 0;
+    color: #f39c12;
+}
+.resource {
+    margin-bottom: 10px;
+    padding: 10px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 5px;
+}
+.building {
+    display: inline-block;
+    width: 100px;
+    height: 100px;
+    margin: 10px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 10px;
+    text-align: center;
+    cursor: pointer;
+    transition: transform 0.3s ease;
+}
+.building:hover {
+    transform: scale(1.05);
+}
+.building img {
+    width: 60px;
+    height: 60px;
+    margin-top: 10px;
+}
+#notification-area {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    width: 300px;
+}
+.notification {
+    background: rgba(0,0,0,0.7);
+    color: #fff;
+    padding: 10px;
+    margin-bottom: 10px;
+    border-radius: 5px;
+    animation: fadeIn 0.5s, fadeOut 0.5s 2.5s forwards;
+}
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+@keyframes fadeOut {
+    from { opacity: 1; }
+    to { opacity: 0; }
+}
+</style>
+</head>
+<body>
+<div class="game-container">
+    <div class="sidebar">
+        <h1>Resource Empire</h1>
+        <div id="resources">
+            <!-- Resources will be dynamically added here -->
+        </div>
+    </div>
+    <div class="main-area">
+        <h2>Buildings</h2>
+        <div id="buildings">
+            <!-- Buildings will be dynamically added here -->
+        </div>
+    </div>
+</div>
+<div id="notification-area"></div>
+
+<script>
+const resources = {
+    gold: { name: "Gold", amount: 1000, perSecond: 1 },
+    wood: { name: "Wood", amount: 500, perSecond: 2 },
+    stone: { name: "Stone", amount: 300, perSecond: 1 },
+    food: { name: "Food", amount: 1000, perSecond: 5 }
+};
+
+const buildings = {
+    mine: { name: "Gold Mine", cost: { wood: 100 }, produces: { gold: 10 } },
+    lumbermill: { name: "Lumber Mill", cost: { gold: 100 }, produces: { wood: 2 } },
+    quarry: { name: "Stone Quarry", cost: { gold: 250, wood: 150 }, produces: { stone: 1 } },
+    farm: { name: "Farm", cost: { gold: 100, wood: 75 }, produces: { food: 3 } },
+    university: { name: "University", cost: { gold: 1000, wood: 7500 }, produces: { food: 3 } }
+};
+
+function updateResources() {
+    const resourcesContainer = document.getElementById('resources');
+    resourcesContainer.innerHTML = '';
+    Object.keys(resources).forEach(key => {
+        const resource = resources[key];
+        const resourceElement = document.createElement('div');
+        resourceElement.className = 'resource';
+        resourceElement.innerHTML = `
+            <strong>${resource.name}:</strong> ${Math.floor(resource.amount)}
+            <small>(+${resource.perSecond}/s)</small>
+        `;
+        resourcesContainer.appendChild(resourceElement);
+    });
+}
+
+function createBuildings() {
+    const buildingsContainer = document.getElementById('buildings');
+    Object.keys(buildings).forEach(key => {
+        const building = buildings[key];
+        const buildingElement = document.createElement('div');
+        buildingElement.className = 'building';
+        buildingElement.innerHTML = `
+            <img alt="${building.name} icon" src="${key}.svg" width="60" height="60">
+            <div>${building.name}</div>
+        `;
+        buildingElement.onclick = () => buyBuilding(key);
+        buildingsContainer.appendChild(buildingElement);
+    });
+}
+
+function buyBuilding(buildingKey) {
+    const building = buildings[buildingKey];
+    if (canAfford(building.cost)) {
+        Object.keys(building.cost).forEach(resource => {
+            resources[resource].amount -= building.cost[resource];
+        });
+        Object.keys(building.produces).forEach(resource => {
+            resources[resource].perSecond += building.produces[resource];
+        });
+        updateResources();
+        notify(`${building.name} purchased!`);
+    } else {
+        notify("Not enough resources!", "error");
+    }
+}
+
+function canAfford(cost) {
+    return Object.keys(cost).every(resource => resources[resource].amount >= cost[resource]);
+}
+
+function notify(message, type = "success") {
+    const notificationArea = document.getElementById('notification-area');
+    const notification = document.createElement('div');
+    notification.className = `notification ${type}`;
+    notification.textContent = message;
+    notificationArea.appendChild(notification);
+    setTimeout(() => {
+        notificationArea.removeChild(notification);
+    }, 3000);
+}
+
+function gameLoop() {
+    Object.keys(resources).forEach(key => {
+        resources[key].amount += resources[key].perSecond / 10;  // Divide by 10 for smoother updates
+    });
+    updateResources();
+}
+
+createBuildings();
+updateResources();
+setInterval(gameLoop, 100);  // Update 10 times per second for smoother resource increments
+
+// Simulating other players' actions
+setInterval(() => {
+    const randomResource = Object.keys(resources)[Math.floor(Math.random() * Object.keys(resources).length)];
+    const randomAmount = Math.floor(Math.random() * 10) + 1;
+    resources[randomResource].amount += randomAmount;
+    notify(`Another player found ${randomAmount} ${resources[randomResource].name}!`);
+}, 5000);
+</script>
+</body></html>
+
+<html><head><base href="https://websim-map.example.com/" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resource Control Map</title>
+    <style>
+      body, html {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        font-family: Arial, sans-serif;
+      }
+      #map-container {
+        width: 100%;
+        height: 100%;
+        position: relative;
+        overflow: hidden;
+        background-color: #f0f0f0;
+      }
+      .region {
+        position: absolute;
+        border: 2px solid #333;
+        transition: all 0.3s ease;
+        cursor: pointer;
+      }
+      .region:hover {
+        transform: scale(1.05);
+        box-shadow: 0 0 15px rgba(0,0,0,0.3);
+      }
+      .resource-icon {
+        position: absolute;
+        width: 30px;
+        height: 30px;
+      }
+      #info-panel {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: white;
+        padding: 10px;
+        border-radius: 5px;
+        box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      }
+    </style>
+    </head>
+    <body>
+    <div id="map-container"></div>
+    <div id="info-panel"></div>
+    
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script>
+    const mapContainer = d3.select("#map-container");
+    const infoPanel = d3.select("#info-panel");
+    
+    const regions = [
+      { name: "Forestlands", x: 10, y: 10, width: 200, height: 150, color: "#4CAF50", resources: ["wood", "fruits"] },
+      { name: "Mountains", x: 220, y: 10, width: 180, height: 200, color: "#795548", resources: ["ore", "gems"] },
+      { name: "Plains", x: 10, y: 170, width: 250, height: 120, color: "#FFC107", resources: ["wheat", "cattle"] },
+      { name: "Coastal", x: 270, y: 220, width: 220, height: 140, color: "#03A9F4", resources: ["fish", "salt"] }
+    ];
+    
+    const resourceIcons = {
+      wood: "🌳", fruits: "🍎", ore: "⛏️", gems: "💎",
+      wheat: "🌾", cattle: "🐄", fish: "🐟", salt: "🧂"
+    };
+    
+    function createRegions() {
+      mapContainer.selectAll(".region")
+        .data(regions)
+        .enter()
+        .append("div")
+        .attr("class", "region")
+        .style("left", d => `${d.x}px`)
+        .style("top", d => `${d.y}px`)
+        .style("width", d => `${d.width}px`)
+        .style("height", d => `${d.height}px`)
+        .style("background-color", d => d.color)
+        .on("click", showRegionInfo)
+        .each(function(d) {
+          const region = d3.select(this);
+          d.resources.forEach((resource, i) => {
+            region.append("div")
+              .attr("class", "resource-icon")
+              .style("left", `${10 + i * 40}px`)
+              .style("top", "10px")
+              .text(resourceIcons[resource]);
+          });
+        });
+    }
+    
+    function showRegionInfo(event, d) {
+      infoPanel.html(`
+        <h3>${d.name}</h3>
+        <p>Resources: ${d.resources.join(", ")}</p>
+        <button onclick="harvestResource('${d.name}')">Harvest Resources</button>
+      `);
+    }
+    
+    function harvestResource(regionName) {
+      const region = regions.find(r => r.name === regionName);
+      const harvestedResource = region.resources[Math.floor(Math.random() * region.resources.length)];
+      alert(`You've harvested ${harvestedResource} from ${regionName}!`);
+    }
+    
+    createRegions();
+    </script>
+    </body></html>
